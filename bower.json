@@ -1,5 +1,10 @@
 {
   "name": "require-less",
   "version": "0.0.6",
-  "main": "less.js"
+  "main": [
+	"less.js",
+	"less-builder.js",
+	"lessc.js",
+	"lessc-server.js"
+  ]
 }
