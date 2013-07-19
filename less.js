@@ -1,4 +1,4 @@
-define(['css', 'require'], function(css, require) {
+define('require/less', ['require/css', 'require'], function(css, require) {
   
   var less = {};
   

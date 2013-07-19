@@ -1,4 +1,4 @@
-define(['./lessc'], function(less) {
+define('require/lessc-server', ['require/lessc'], function(less) {
 
 	if (['node', 'rhino'].indexOf(less.mode) == -1) {
 		throw new Error('Environment not supported by require-less builder: ' + less.mode);

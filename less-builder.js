@@ -1,4 +1,4 @@
-define(['css/css-builder', './lessc-server', 'require'], function(css, lessc, req) {
+define('require/less-builder', ['require/css-builder', 'require/lessc-server', 'require'], function(css, lessc, req) {
   var less = {};
   
   var baseParts = req.toUrl('base_url').split('/');
