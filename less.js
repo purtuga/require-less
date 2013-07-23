@@ -21,11 +21,11 @@ define('require/less', ['require/css', 'require'], function(css, require) {
     return name;
   };
 
-  less.parse = function(less, callback) {
+  less.parse = function(content, callback) {
     require(['./lessc'], function(lessc) {
       var css;
       var parser = new lessc.Parser();
-      parser.parse(less, function(err, tree) {
+      parser.parse(content, function(err, tree) {
         if (err)
           throw err;
         try {
