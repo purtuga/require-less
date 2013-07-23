@@ -1,14 +1,16 @@
 define('require/less', ['require/css', 'require'], function(css, require) {
-  
+
   var less = {};
-  
+
   less.pluginBuilder = './less-builder';
-  
-  if (typeof window == 'undefined') {
-    less.load = function(n, r, load) { load(); }
+
+  if (typeof window === 'undefined') {
+    less.load = function(n, r, load) {
+      load();
+    };
     return less;
   }
-  
+
   //copy api methods from the css plugin
   less.normalize = function(name, normalize) {
     if (name.substr(name.length - 5, 5) == '.less')
@@ -17,7 +19,7 @@ define('require/less', ['require/css', 'require'], function(css, require) {
     name = normalize(name);
 
     return name;
-  }
+  };
 
   less.parse = function(less, callback) {
     require(['./lessc'], function(lessc) {
@@ -37,10 +39,10 @@ define('require/less', ['require/css', 'require'], function(css, require) {
       });
     });
   }
-  
+
   less.load = function(lessId, req, load, config) {
     css.load(lessId, req, load, config, less.parse);
-  }
-  
+  };
+
   return less;
 });
