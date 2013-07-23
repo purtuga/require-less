@@ -1,4 +1,4 @@
-define('require/less', ['require/css', 'require'], function(css, require) {
+define('require/less', ['require/css', 'require', 'less'], function(css, require, lesslib) {
 
   var less = {};
 
@@ -22,23 +22,21 @@ define('require/less', ['require/css', 'require'], function(css, require) {
   };
 
   less.parse = function(content, callback) {
-    require(['./lessc'], function(lessc) {
-      var css;
-      var parser = new lessc.Parser();
-      parser.parse(content, function(err, tree) {
-        if (err)
-          throw err;
-        try {
-          css = tree.toCSS();
-        }
-        catch(e) {
-          throw new Error("LESS parse error: " + e.type + ", " + e.message);
-        }
-        //instant callback luckily for builds
-        callback(css);
-      });
+    var css;
+    var parser = new lesslib.Parser();
+    parser.parse(content, function(err, tree) {
+      if (err)
+        throw err;
+      try {
+        css = tree.toCSS();
+      }
+      catch(e) {
+        throw new Error("LESS parse error: " + e.type + ", " + e.message);
+      }
+      //instant callback luckily for builds
+      callback(css);
     });
-  }
+  };
 
   less.load = function(lessId, req, load, config) {
     css.load(lessId, req, load, config, less.parse);
