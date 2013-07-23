@@ -22,6 +22,8 @@ define('require/less', ['require/css', 'require', 'less'], function(css, require
   };
 
   less.parse = function(content, callback) {
+    console.log("*** require-less.parse", arguments);
+
     var css;
     var parser = new lesslib.Parser();
     parser.parse(content, function(err, tree) {
@@ -39,6 +41,8 @@ define('require/less', ['require/css', 'require', 'less'], function(css, require
   };
 
   less.load = function(lessId, req, load, config) {
+    console.log("*** require-less.load", arguments);
+
     css.load(lessId, req, load, config, less.parse);
   };
 
