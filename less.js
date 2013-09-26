@@ -11,6 +11,11 @@ define('require/less', ['require/css', 'require', 'less'], function(css, require
     return less;
   }
 
+	// set initial configuration
+	window.less = window.less || {
+	  env: 'development'
+	};
+
   //copy api methods from the css plugin
   less.normalize = function(name, normalize) {
     if (name.substr(name.length - 5, 5) == '.less')
