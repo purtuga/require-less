@@ -11,15 +11,22 @@ define('require/less-builder', ['require', './normalize'], function(req, normali
     if (typeof process !== "undefined" && process.versions && !!process.versions.node && require.nodeRequire) {
       try {
         var csso = require.nodeRequire('csso');
+      }
+      catch(e) {
+        console.log('Compression module not installed. Use "npm install csso -g" to enable.');
+        return css;
+      }
+      try {
         var csslen = css.length;
         css = csso.justDoIt(css);
         console.log('Compressed CSS output to ' + Math.round(css.length / csslen * 100) + '%.');
         return css;
       }
       catch(e) {
-        console.log('Compression module not installed. Use "npm install csso -g" to enable.');
+        console.log('Unable to compress css.\n' + e);
         return css;
       }
+
     }
     console.log('Compression not supported outside of nodejs environments.');
     return css;
@@ -85,12 +92,12 @@ define('require/less-builder', ['require', './normalize'], function(req, normali
     var fileUrl = req.toUrl(name + '.less');
 
     //add to the buffer
-    var parser = new less.Parser({
-      paths: [baseUrl],
-      filename: fileUrl,
-      async: false,
-      syncImport: true
-    });
+    var cfg = _config.less || {};
+    cfg.paths = [baseUrl];
+    cfg.filename = fileUrl;
+    cfg.async = false;
+    cfg.syncImport = true;
+    var parser = new less.Parser(cfg);
     parser.parse('@import (multiple) "' + path.relative(baseUrl, fileUrl) + '";', function(err, tree) {
       if (err) {
         console.log(err + ' at ' + path.relative(baseUrl, err.filename) + ', line ' + err.line);
@@ -126,6 +133,8 @@ define('require/less-builder', ['require', './normalize'], function(req, normali
       console.log('Writing CSS! file: ' + data.name + '\n');
       
       var outPath = config.appDir ? config.baseUrl + data.name + '.css' : config.out.replace(/\.js$/, '.css');
+
+      css = normalize(css, siteRoot, outPath);
       
       saveFile(outPath, compress(css));
     }
