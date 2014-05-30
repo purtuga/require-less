@@ -92,7 +92,7 @@ define(['require', './normalize', 'css/transform-css', 'css/css-builder'], funct
 
     //add to the buffer
     var cfg = _config.less || {};
-    cfg.paths = [baseUrl];
+    cfg.paths = cfg.paths || [baseUrl];
     cfg.filename = fileUrl;
     cfg.async = false;
     cfg.syncImport = true;
