@@ -1,4 +1,4 @@
-define(['require', './normalize'], function(req, normalize) {
+define(['require', './normalize', 'css/transform-css', 'css/css-builder'], function(req, normalize, getTransformedCss, cssAPI) {
   var lessAPI = {};
 
   var isWindows = !!process.platform.match(/^win/);
@@ -65,7 +65,6 @@ define(['require', './normalize'], function(req, normalize) {
   var less = require.nodeRequire('less');
   var path = require.nodeRequire('path');
 
-  var layerBuffer = [];
   var lessBuffer = {};
 
   lessAPI.normalize = function(name, normalize) {
@@ -105,50 +104,38 @@ define(['require', './normalize'], function(req, normalize) {
       }
 
       var css = tree.toCSS(config.less);
+      function nodeReq(depNames, callback) {
+        var depUrls = depNames.map(req.toUrl);
+        var deps = depUrls.map(require.nodeRequire);
+        callback.apply({}, deps);
+      }
+      getTransformedCss.fromCssStr(
+        nodeReq,
+        getTransformedCss.getTransformEaches(_config, 'node'),
+        {},
+        css,
+        function (css) {
+          // normalize all imports relative to the siteRoot, itself relative to the output file / output dir
+          lessBuffer[name] = normalize(css, isWindows ? fileUrl.replace(/\\/g, '/') : fileUrl, siteRoot);
 
-      // normalize all imports relative to the siteRoot, itself relative to the output file / output dir
-      lessBuffer[name] = normalize(css, isWindows ? fileUrl.replace(/\\/g, '/') : fileUrl, siteRoot);
-
-      load();
+          load();
+      });
     });
   }
 
-  var layerBuffer = [];
-  
   lessAPI.write = function(pluginName, moduleName, write) {
     if (moduleName.match(absUrlRegEx))
       return load();
     
-    layerBuffer.push(lessBuffer[moduleName]);
+    cssAPI.addToBuffer(lessBuffer[moduleName]);
     
     write.asModule(pluginName + '!' + moduleName, 'define(function(){})');
   }
   
   lessAPI.onLayerEnd = function(write, data) {
-    
-    //calculate layer css
-    var css = layerBuffer.join('');
-    
-    if (config.separateCSS) {
-      console.log('Writing CSS! file: ' + data.name + '\n');
-      
-      var outPath = config.appDir ? config.baseUrl + data.name + '.css' : config.out.replace(/\.js$/, '.css');
-
-      css = normalize(css, siteRoot, outPath);
-      
-      saveFile(outPath, compress(css));
+    if (cssAPI.getBuffer().length) {
+      cssAPI.flushBuffer(config, write, data);
     }
-    else {
-      if (css == '')
-        return;
-      write(
-        "(function(c){var d=document,a='appendChild',i='styleSheet',s=d.createElement('style');s.type='text/css';d.getElementsByTagName('head')[0][a](s);s[i]?s[i].cssText=c:s[a](d.createTextNode(c));})\n"
-        + "('" + escape(compress(css)) + "');\n"
-      );
-    }
-    
-    //clear layer buffer for next layer
-    layerBuffer = [];
   }
   
   return lessAPI;
