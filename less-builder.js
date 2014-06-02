@@ -97,6 +97,7 @@ define(['require', './normalize', 'css/transform-css', 'css/css-builder'], funct
     cfg.async = false;
     cfg.syncImport = true;
     var parser = new less.Parser(cfg);
+
     parser.parse('@import (multiple) "' + path.relative(baseUrl, fileUrl) + '";', function(err, tree) {
       if (err) {
         console.log(err + ' at ' + path.relative(baseUrl, err.filename) + ', line ' + err.line);
@@ -120,6 +121,9 @@ define(['require', './normalize', 'css/transform-css', 'css/css-builder'], funct
 
           load();
       });
+    },{
+      globalVars: cfg.globalVars,
+      modifyVars: cfg.modifyVars
     });
   }
 
