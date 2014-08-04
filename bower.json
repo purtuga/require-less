@@ -1,5 +1,11 @@
 {
   "name": "require-less",
-  "version": "0.1.1",
-  "ignore": ["example", ".gitignore"]
+  "version": "0.1.2",
+  "ignore": [
+    "example",
+    ".gitignore"
+  ],
+  "dependencies": {
+    "require-css": "gobengo/require-css#transformEach2"
+  }
 }

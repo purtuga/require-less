@@ -1,4 +1,4 @@
-define(['require', './normalize'], function(req, normalize) {
+define(['require', './normalize', 'css/transform-css', 'css/css-builder'], function(req, normalize, getTransformedCss, cssAPI) {
   var lessAPI = {};
 
   var isWindows = !!process.platform.match(/^win/);
@@ -11,15 +11,22 @@ define(['require', './normalize'], function(req, normalize) {
     if (typeof process !== "undefined" && process.versions && !!process.versions.node && require.nodeRequire) {
       try {
         var csso = require.nodeRequire('csso');
+      }
+      catch(e) {
+        console.log('Compression module not installed. Use "npm install csso -g" to enable.');
+        return css;
+      }
+      try {
         var csslen = css.length;
         css = csso.justDoIt(css);
         console.log('Compressed CSS output to ' + Math.round(css.length / csslen * 100) + '%.');
         return css;
       }
       catch(e) {
-        console.log('Compression module not installed. Use "npm install csso -g" to enable.');
+        console.log('Unable to compress css.\n' + e);
         return css;
       }
+
     }
     console.log('Compression not supported outside of nodejs environments.');
     return css;
@@ -58,7 +65,6 @@ define(['require', './normalize'], function(req, normalize) {
   var less = require.nodeRequire('less');
   var path = require.nodeRequire('path');
 
-  var layerBuffer = [];
   var lessBuffer = {};
 
   lessAPI.normalize = function(name, normalize) {
@@ -85,13 +91,13 @@ define(['require', './normalize'], function(req, normalize) {
     var fileUrl = req.toUrl(name + '.less');
 
     //add to the buffer
-    var parser = new less.Parser({
-      paths: [baseUrl],
-      filename: fileUrl,
-      async: false,
-      syncImport: true,
-      relativeUrls: config.less && config.less.relativeUrls
-    });
+    var cfg = _config.less || {};
+    cfg.paths = cfg.paths || [baseUrl];
+    cfg.filename = fileUrl;
+    cfg.async = false;
+    cfg.syncImport = true;
+    var parser = new less.Parser(cfg);
+
     parser.parse('@import (multiple) "' + path.relative(baseUrl, fileUrl) + '";', function(err, tree) {
       if (err) {
         console.log(err + ' at ' + path.relative(baseUrl, err.filename) + ', line ' + err.line);
@@ -99,48 +105,41 @@ define(['require', './normalize'], function(req, normalize) {
       }
 
       var css = tree.toCSS(config.less);
+      function nodeReq(depNames, callback) {
+        var depUrls = depNames.map(req.toUrl);
+        var deps = depUrls.map(require.nodeRequire);
+        callback.apply({}, deps);
+      }
+      getTransformedCss.fromCssStr(
+        nodeReq,
+        getTransformedCss.getTransformEaches(_config, 'node'),
+        {},
+        css,
+        function (css) {
+          // normalize all imports relative to the siteRoot, itself relative to the output file / output dir
+          lessBuffer[name] = normalize(css, isWindows ? fileUrl.replace(/\\/g, '/') : fileUrl, siteRoot);
 
-      // normalize all imports relative to the siteRoot, itself relative to the output file / output dir
-      lessBuffer[name] = normalize(css, isWindows ? fileUrl.replace(/\\/g, '/') : fileUrl, siteRoot);
-
-      load();
+          load();
+      });
+    },{
+      globalVars: cfg.globalVars,
+      modifyVars: cfg.modifyVars
     });
   }
 
-  var layerBuffer = [];
-  
   lessAPI.write = function(pluginName, moduleName, write) {
     if (moduleName.match(absUrlRegEx))
       return load();
     
-    layerBuffer.push(lessBuffer[moduleName]);
+    cssAPI.addToBuffer(lessBuffer[moduleName]);
     
     write.asModule(pluginName + '!' + moduleName, 'define(function(){})');
   }
   
   lessAPI.onLayerEnd = function(write, data) {
-    
-    //calculate layer css
-    var css = layerBuffer.join('');
-    
-    if (config.separateCSS) {
-      console.log('Writing CSS! file: ' + data.name + '\n');
-      
-      var outPath = config.appDir ? config.baseUrl + data.name + '.css' : config.out.replace(/\.js$/, '.css');
-      
-      saveFile(outPath, compress(css));
+    if (cssAPI.getBuffer().length) {
+      cssAPI.flushBuffer(config, write, data);
     }
-    else {
-      if (css == '')
-        return;
-      write(
-        "(function(c){var d=document,a='appendChild',i='styleSheet',s=d.createElement('style');s.type='text/css';d.getElementsByTagName('head')[0][a](s);s[i]?s[i].cssText=c:s[a](d.createTextNode(c));})\n"
-        + "('" + escape(compress(css)) + "');\n"
-      );
-    }
-    
-    //clear layer buffer for next layer
-    layerBuffer = [];
   }
   
   return lessAPI;

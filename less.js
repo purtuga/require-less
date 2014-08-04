@@ -1,4 +1,4 @@
-define(['require'], function(require) {
+define(['require', 'css'], function(require, cssAPI) {
   
   var lessAPI = {};
   
@@ -26,11 +26,6 @@ define(['require'], function(require) {
   pagePath[pagePath.length - 1] = '';
   pagePath = pagePath.join('/');
 
-  // set initial default configuration
-  window.less = window.less || {
-    env: 'development'
-  };
-
   var styleCnt = 0;
   var curStyle;
   lessAPI.inject = function(css) {
@@ -46,7 +41,24 @@ define(['require'], function(require) {
       curStyle.appendChild(document.createTextNode(css));
   }
 
+  // If config.less.browserLoad is set, then the user does not want to 
+  // run less.js in the browser. They just want to include another,
+  // probably already built, css file.
+  var insertedBrowerLoad = false;
+
   lessAPI.load = function(lessId, req, load, config) {
+    var lessConfig = window.less = config.less || {};
+    window.less.env = 'development';
+
+    if (lessConfig.browserLoad) {
+      if ( ! insertedBrowerLoad) {
+        insertedBrowerLoad = true;
+        config.css.transform = false;
+        return cssAPI.load(lessConfig.browserLoad, req, load, config);        
+      }
+      return load();
+    }
+
     require(['./lessc', './normalize'], function(lessc, normalize) {
 
       var fileUrl = req.toUrl(lessId + '.less');
