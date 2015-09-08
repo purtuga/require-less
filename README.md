@@ -1,6 +1,8 @@
 require-less
 ============
 
+**Note: This project is not currently actively supported and is seeking a maintainer.**
+
 Optimizable [LESS](http://lesscss.org) requiring with [RequireJS](http://requirejs.org).
 
 Based on the ideas from [require-css module](https://github.com/guybedford/require-css), read the documentation there for further usage instructions.
