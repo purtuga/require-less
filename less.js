@@ -1,4 +1,4 @@
-define('require/less', ['require', 'less'], function(require, less) {
+define(['require', 'less'], function(require, less) {
 
   var lessAPI = {};
 
